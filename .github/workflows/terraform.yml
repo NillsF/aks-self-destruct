@@ -112,3 +112,28 @@ jobs:
         echo "::set-env name=IDNAME::aks-sd-id"
         export IDENTITY_CLIENT_ID="$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query clientId -otsv)"
         export IDENTITY_RESOURCE_ID="$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query id -otsv)"
+
+    - name: Create Azure Identity in K8s
+      run: |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: "aadpodidentity.k8s.io/v1"
+        kind: AzureIdentity
+        metadata:
+          name: $IDNAME
+        spec:
+          type: 0
+          resourceID: $IDENTITY_RESOURCE_ID
+          clientID: $IDENTITY_CLIENT_ID
+        EOF
+
+    - name: Create Azure Identity Binding in K8s
+      run: |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: "aadpodidentity.k8s.io/v1"
+        kind: AzureIdentityBinding
+        metadata:
+          name: $IDNAME-binding
+        spec:
+          azureIdentity: $IDNAME
+          selector: $IDNAME
+        EOF
