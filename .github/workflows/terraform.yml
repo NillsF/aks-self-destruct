@@ -151,3 +151,39 @@ jobs:
           azureIdentity: $IDNAME
           selector: $IDNAME
         EOF
+    
+    - name: Add delete job.
+      run: | 
+        cat <<EOF | kubectl apply -f -
+        apiVersion: batch/v1beta1
+        kind: CronJob
+        metadata:
+          name: hello
+          labels:
+            aadpodidbinding: $IDNAME
+        spec:
+          schedule: "*/1 * * * *"
+          jobTemplate:
+            spec:
+              template:
+                metadata:
+                  labels:
+                    aadpodidbinding: $IDNAME
+                spec:
+                  containers:
+                  - name: hello
+                    image: python:3.7-alpine
+                    command: ["/bin/sh"]
+                    args:
+                      - -c
+                      - >-
+                          apk add --no-cache curl &&
+                          echo "curl installed" &&
+                          response=\$(curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F' -H Metadata:true -s) &&
+                          echo "got token" &&
+                          access_token=\$(echo \$response | python -c 'import sys, json; print (json.load(sys.stdin)["access_token"])') &&
+                          echo "processed using python" &&
+                          curl -X DELETE -H "Authorization: Bearer \$access_token" -H "Content-Type: application/json" https://management.azure.com/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$RGNAME?api-version=2019-05-10 &&
+                          echo "delete executed"
+                  restartPolicy: Never
+        EOF
