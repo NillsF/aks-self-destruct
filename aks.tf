@@ -29,3 +29,7 @@ resource "azurerm_kubernetes_cluster" "aks-sd" {
     type = "SystemAssigned"
   }
 }
+
+output "RGNAME" {
+  value = "${azurerm_resource_group.rg.name}"
+}

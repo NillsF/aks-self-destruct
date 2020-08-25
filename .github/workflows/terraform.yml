@@ -72,7 +72,9 @@ jobs:
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
-
+      with:
+        terraform_wrapper: false
+        
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       run: terraform init
@@ -87,6 +89,19 @@ jobs:
 
       # On push to master, build or change infrastructure according to Terraform configuration files
       # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
-    - name: Terraform Apply
+    - name: Terraform Apply and set environment variables
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-      run: terraform apply -auto-approve
+      run: |
+        terraform apply -auto-approve
+        echo '::set-env name=RGNAME::$(terraform output RGNAME)'
+
+    - name: Login to azure and get AKS credentials
+      run: |
+        az login --service-principal --username $ARM_CLIENT_ID --password $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID
+        az aks get-credentials -n contoso-aks -g $RGNAME
+
+    - name: Deploy AAD pod identity
+      run: |
+        kubectl apply -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment.yaml
+        # For AKS clusters, deploy the MIC and AKS add-on exception by running -
+        kubectl apply -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/mic-exception.yaml  
