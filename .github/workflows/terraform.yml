@@ -112,6 +112,7 @@ jobs:
 
     - name: Create User Assigned Managed identity
       run: |
+        az identity create -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID
         echo "::set-env name=IDENTITY_CLIENT_ID::$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query clientId -otsv)"
         echo "::set-env name=IDENTITY_RESOURCE_ID::$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query id -otsv)"
 
