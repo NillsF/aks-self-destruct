@@ -74,7 +74,7 @@ jobs:
       uses: hashicorp/setup-terraform@v1
       with:
         terraform_wrapper: false
-        
+
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       run: terraform init
@@ -93,7 +93,8 @@ jobs:
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
       run: |
         terraform apply -auto-approve
-        echo '::set-env name=RGNAME::$(terraform output RGNAME)'
+        echo "::set-env name=RGNAME::$(terraform output RGNAME)"
+
 
     - name: Login to azure and get AKS credentials
       run: |
@@ -105,3 +106,9 @@ jobs:
         kubectl apply -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment.yaml
         # For AKS clusters, deploy the MIC and AKS add-on exception by running -
         kubectl apply -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/mic-exception.yaml  
+
+    - name: Create User Assigned Managed identity
+      run: |
+        echo "::set-env name=IDNAME::aks-sd-id"
+        export IDENTITY_CLIENT_ID="$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query clientId -otsv)"
+        export IDENTITY_RESOURCE_ID="$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query id -otsv)"
