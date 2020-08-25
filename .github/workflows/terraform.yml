@@ -110,11 +110,22 @@ jobs:
     - name: "echo identity name"
       run: echo "::set-env name=IDNAME::aks-sd-id"
 
-
     - name: Create User Assigned Managed identity
       run: |
-        export IDENTITY_CLIENT_ID="$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query clientId -otsv)"
-        export IDENTITY_RESOURCE_ID="$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query id -otsv)"
+        echo "::set-env name=IDENTITY_CLIENT_ID::$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query clientId -otsv)"
+        echo "::set-env name=IDENTITY_RESOURCE_ID::$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query id -otsv)"
+
+    - name: Create role assignment for pod identity
+      run: echo "::set-env name=IDENTITY_ASSIGNMENT_ID::$(az role assignment create --role Contributor --assignee $IDENTITY_CLIENT_ID --scope /subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$RGNAME --query id -otsv)"
+
+    - name: "echo cluster identity name"
+      run: |
+        echo "::set-env name=CLUSTER_CLIENT_ID::$(az identity show -g "MC_"$RGNAME"_contoso-aks_westus2" -n contoso-aks-agentpool --subscription $ARM_SUBSCRIPTION_ID --query clientId -otsv)"
+
+    - name: Create role assignment for cluster identity
+      run: |
+        echo "::set-env name=IDENTITY_ASSIGNMENT_ID::$(az role assignment create --role Contributor --assignee $CLUSTER_CLIENT_ID --scope /subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/"MC_"$RGNAME"_contoso-aks_westus2" --query id -otsv)"
+        echo "::set-env name=IDENTITY_ASSIGNMENT_ID::$(az role assignment create --role Contributor --assignee $CLUSTER_CLIENT_ID --scope /subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$RGNAME --query id -otsv)"
 
     - name: Create Azure Identity in K8s
       run: |
