@@ -107,9 +107,12 @@ jobs:
         # For AKS clusters, deploy the MIC and AKS add-on exception by running -
         kubectl apply -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/mic-exception.yaml  
 
+    - name: "echo identity name"
+      run: echo "::set-env name=IDNAME::aks-sd-id"
+
+
     - name: Create User Assigned Managed identity
       run: |
-        echo "::set-env name=IDNAME::aks-sd-id"
         export IDENTITY_CLIENT_ID="$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query clientId -otsv)"
         export IDENTITY_RESOURCE_ID="$(az identity show -g $RGNAME -n $IDNAME --subscription $ARM_SUBSCRIPTION_ID --query id -otsv)"
 
