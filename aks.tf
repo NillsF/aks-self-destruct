@@ -9,8 +9,8 @@ locals {
 }
 
 resource "azurerm_resource_group" "rg" {
-        name = local.rgname
-        location = "westus2"
+  name     = local.rgname
+  location = "westus2"
 }
 
 resource "azurerm_kubernetes_cluster" "aks-sd" {
