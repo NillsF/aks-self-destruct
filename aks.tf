@@ -89,7 +89,6 @@ output "IDNAME" {
 }
 output "IDENTITY_CLIENT_ID" {
   value = "${azurerm_user_assigned_identity.delete-id.client_id}"
-}"
 }
 output "IDENTITY_RESOURCE_ID" {
   value = "${azurerm_user_assigned_identity.delete-id.id}"
